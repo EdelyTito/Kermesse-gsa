@@ -110,11 +110,6 @@
                 <a href="VistaPublica.html" target="_blank" class="btn-link">📱 Abrir Vista Pública</a>
             </div>
 
-            <div class="status-bar" :class="{ online: estadoConexion.includes('✅'), offline: estadoConexion.includes('❌') }">
-                <strong>🔗 Backend:</strong> {{ backendURL }} | 
-                <strong>📊 Estado:</strong> {{ estadoConexion }}
-            </div>
-
             <div class="venta-form">
                 <h2>📝 Registrar Venta</h2>
                 <form @submit.prevent="registrarVenta">
