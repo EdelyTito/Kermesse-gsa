@@ -87,7 +87,7 @@
         methods: {
             async cargarDatos() {
                 try {
-                    const response = await fetch(`Bs{backendURL}/api/platos`);
+                    const response = await fetch(`${backendURL}/api/platos`);
                     
                     if (response.ok) {
                         this.platos = await response.json();
