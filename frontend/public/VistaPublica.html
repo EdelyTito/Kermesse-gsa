@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kermesse Scout - Disponibilidad</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        .public-only {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .last-update {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="public-only">
+        <div class="header">
+            <h1>🏕️ Kermesse Scout</h1>
+            <p>Disponibilidad de Platos en Tiempo Real</p>
+        </div>
+
+        <div class="last-update">
+            <strong>🕒 Actualizado:</strong> {{ ultimaActualizacion }}
+            <br>
+            <small>Se actualiza automáticamente cada 10 segundos</small>
+        </div>
+
+        <div class="platos-grid">
+            <div v-for="plato in platos" :key="plato.id" class="plato-card" :class="{ agotado: plato.vendidos >= plato.stock }">
+                <h3>{{ plato.nombre }}</h3>
+                <p class="precio">${{ plato.precio_venta }}</p>
+                <p class="stock" :class="{ 
+                    'poco-stock': (plato.stock - plato.vendidos) < 10,
+                    'muy-poco-stock': (plato.stock - plato.vendidos) < 5
+                }">
+                    {{ plato.stock - plato.vendidos }} disponibles
+                </p>
+                <div class="progress">
+                    <div class="progress-bar" :style="{ width: (plato.vendidos / plato.stock) * 100 + '%' }"></div>
+                </div>
+                <div v-if="plato.vendidos >= plato.stock" class="agotado-label">AGOTADO</div>
+                <div v-else-if="(plato.stock - plato.vendidos) < 5" class="poco-stock-label">¡ÚLTIMOS!</div>
+            </div>
+        </div>
+        
+        <div class="totales">
+            <h3>📊 Resumen General</h3>
+            <p>Total vendido: {{ totalVendido }} platos</p>
+            <p>Recaudación total: ${{ totalRecaudado }}</p>
+        </div>
+
+        <div class="contacto">
+            <p>📞 ¿Quieres reservar? Contacta a tu scout líder</p>
+            <p>🕒 Horario de atención: 10:00 AM - 6:00 PM</p>
+        </div>
+
+        <div class="footer">
+            <small>Sistema de Gestión Kermesse Scout - Actualizado en tiempo real</small>
+        </div>
+    </div>
+
+    <script>
+    const { createApp } = Vue;
+
+    const backendURL = 'https://kermesse-gsa.up.railway.app';
+
+    createApp({
+        data() {
+            return {
+                platos: [],
+                ultimaActualizacion: 'Cargando...',
+                totalVendido: 0,
+                totalRecaudado: 0
+            }
+        },
+        async mounted() {
+            await this.cargarDatos();
+            // Actualizar cada 10 segundos
+            setInterval(this.cargarDatos, 10000);
+        },
+        methods: {
+            async cargarDatos() {
+                try {
+                    const response = await fetch(`${backendURL}/api/platos`);
+                    
+                    if (response.ok) {
+                        this.platos = await response.json();
+                        this.ultimaActualizacion = new Date().toLocaleTimeString();
+                        
+                        // Calcular totales
+                        this.totalVendido = this.platos.reduce((sum, plato) => sum + plato.vendidos, 0);
+                        this.totalRecaudado = this.platos.reduce((sum, plato) => 
+                            sum + (plato.vendidos * plato.precio_venta), 0
+                        );
+                    }
+                } catch (error) {
+                    console.error('Error cargando datos:', error);
+                }
+            }
+        }
+    }).mount('#app');
+    </script>
+</body>
+</html>
