@@ -1,7 +1,7 @@
 const { createApp } = Vue;
 
 // URL del backend en Railway - se actualizará después del deploy
-let backendURL = 'https://tu-backend.railway.app';
+let backendURL = 'https://kermesse-gsa.up.railway.app';
 
 createApp({
     data() {
