@@ -16,7 +16,8 @@ createApp({
             },
             ventasPorEquipo: {},
             loading: false,
-            backendURL: backendURL
+            backendURL: backendURL,
+            estadoConexion: '🔄 Conectando...'
         }
     },
     async mounted() {
@@ -40,6 +41,7 @@ createApp({
                 if (platosRes.ok && ventasRes.ok) {
                     this.platos = await platosRes.json();
                     this.ventasPorEquipo = await ventasRes.json();
+                    this.estadoConexion = '✅ Conectado - Datos en tiempo real';
                     console.log('✅ Datos cargados correctamente');
                 } else {
                     throw new Error(`Platos: ${platosRes.status}, Ventas: ${ventasRes.status}`);
@@ -47,12 +49,13 @@ createApp({
                 
             } catch (error) {
                 console.error('❌ Error cargando datos:', error);
+                this.estadoConexion = '❌ Error de conexión';
             }
             
-            // Inicializar cantidades
+            // ✅ CORREGIDO: Sin this.$set
             this.platos.forEach(plato => {
                 if (this.venta.cantidades[plato.id] === undefined) {
-                    this.$set(this.venta.cantidades, plato.id, 0);
+                    this.venta.cantidades[plato.id] = 0;
                 }
             });
         },
