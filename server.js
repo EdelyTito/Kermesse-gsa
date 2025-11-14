@@ -6,10 +6,8 @@ const app = express();
 
 // Configurar CORS para producción
 app.use(cors({
-  origin: [
-    'https://kermesse-gsa.netlify.app',
-    'http://localhost:3000'
-  ],
+  origin: "*",  // Permite todos los orígenes temporalmente
+  methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
 
