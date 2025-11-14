@@ -133,7 +133,7 @@
                         <div v-for="plato in platos" :key="plato.id" class="plato-input">
                             <label :for="'plato-' + plato.id">
                                 <strong>{{ plato.nombre }}</strong><br>
-                                <small>{{ plato.stock - plato.vendidos }} disponibles • ${{ plato.precio_venta }}</small>
+                                <small>{{ plato.stock - plato.vendidos }} disponibles • Bs{{ plato.precio_venta }}</small>
                             </label>
                             <input 
                                 type="number" 
@@ -160,7 +160,7 @@
                         <div class="equipo-stats">
                             <div class="stat">
                                 <span class="stat-label">💰 Total:</span>
-                                <span class="stat-value">${{ equipo.total }}</span>
+                                <span class="stat-value">Bs{{ equipo.total }}</span>
                             </div>
                             <div class="stat">
                                 <span class="stat-label">🎯 Vendidos:</span>
@@ -194,11 +194,11 @@
                             </div>
                             <div class="stat">
                                 <span class="stat-label">💵 Precio:</span>
-                                <span class="stat-value">${{ plato.precio_venta }}</span>
+                                <span class="stat-value">Bs{{ plato.precio_venta }}</span>
                             </div>
                             <div class="stat">
                                 <span class="stat-label">💰 Ganancia:</span>
-                                <span class="stat-value">${{ (plato.precio_venta - plato.precio_costo) * plato.vendidos }}</span>
+                                <span class="stat-value">Bs{{ (plato.precio_venta - plato.precio_costo) * plato.vendidos }}</span>
                             </div>
                         </div>
                         <div class="progress">
@@ -219,7 +219,7 @@
                 <div class="total-cards">
                     <div class="total-card">
                         <h3>Total Recaudado</h3>
-                        <p class="total-amount">${{ totalRecaudado }}</p>
+                        <p class="total-amount">Bs{{ totalRecaudado }}</p>
                     </div>
                     <div class="total-card">
                         <h3>Total Vendido</h3>
@@ -227,7 +227,7 @@
                     </div>
                     <div class="total-card">
                         <h3>Ganancia Total</h3>
-                        <p class="total-amount">${{ totalGanancia }}</p>
+                        <p class="total-amount">Bs{{ totalGanancia }}</p>
                     </div>
                 </div>
             </div>
@@ -248,7 +248,7 @@
             <div class="platos-grid">
                 <div v-for="plato in platos" :key="plato.id" class="plato-card-public" :class="{ agotado: plato.vendidos >= plato.stock }">
                     <h3>{{ plato.nombre }}</h3>
-                    <p class="precio">${{ plato.precio_venta }}</p>
+                    <p class="precio">Bs{{ plato.precio_venta }}</p>
                     <p class="stock" :class="{ 
                         'poco-stock': (plato.stock - plato.vendidos) < 10,
                         'muy-poco-stock': (plato.stock - plato.vendidos) < 5
@@ -261,10 +261,6 @@
                     <div v-if="plato.vendidos >= plato.stock" class="agotado-label">AGOTADO</div>
                     <div v-else-if="(plato.stock - plato.vendidos) < 5" class="poco-stock-label">¡ÚLTIMOS!</div>
                 </div>
-            </div>
-            
-            <div class="contacto">
-                <p>📞 ¿Quieres reservar? Contacta a tu scout líder</p>
             </div>
         </div>
     </div>

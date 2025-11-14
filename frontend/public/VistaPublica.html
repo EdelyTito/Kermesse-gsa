@@ -44,7 +44,7 @@
         <div class="platos-grid">
             <div v-for="plato in platos" :key="plato.id" class="plato-card" :class="{ agotado: plato.vendidos >= plato.stock }">
                 <h3>{{ plato.nombre }}</h3>
-                <p class="precio">${{ plato.precio_venta }}</p>
+                <p class="precio">Bs{{ plato.precio_venta }}</p>
                 <p class="stock" :class="{ 
                     'poco-stock': (plato.stock - plato.vendidos) < 10,
                     'muy-poco-stock': (plato.stock - plato.vendidos) < 5
@@ -87,7 +87,7 @@
         methods: {
             async cargarDatos() {
                 try {
-                    const response = await fetch(`${backendURL}/api/platos`);
+                    const response = await fetch(`Bs{backendURL}/api/platos`);
                     
                     if (response.ok) {
                         this.platos = await response.json();
