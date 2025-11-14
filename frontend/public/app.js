@@ -1,7 +1,9 @@
 const { createApp } = Vue;
 
-// URL del backend en Railway - se actualizará después del deploy
-let backendURL = 'https://kermesse-gsa.up.railway.app';
+// URL automática - funciona en cualquier entorno
+let backendURL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:3000' 
+    : 'https://kermesse-gsa.up.railway.app';
 
 createApp({
     data() {
@@ -18,42 +20,41 @@ createApp({
         }
     },
     async mounted() {
-        // Intentar detectar la URL automáticamente en producción
-        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-            // En producción, usar URL relativa (mismo dominio si usamos funciones serverless)
-            this.backendURL = window.location.origin;
-        }
-        
+        console.log('🔗 Conectando a:', this.backendURL);
         await this.cargarDatos();
-        // Actualizar cada 10 segundos
         setInterval(this.cargarDatos, 10000);
     },
     methods: {
         async cargarDatos() {
             try {
+                console.log('📡 Cargando datos de:', this.backendURL);
+                
                 const [platosRes, ventasRes] = await Promise.all([
                     fetch(`${this.backendURL}/api/platos`),
                     fetch(`${this.backendURL}/api/ventas/equipos`)
                 ]);
                 
-                if (!platosRes.ok || !ventasRes.ok) {
-                    throw new Error('Error cargando datos');
+                console.log('📊 Respuesta platos:', platosRes.status);
+                console.log('📊 Respuesta ventas:', ventasRes.status);
+                
+                if (platosRes.ok && ventasRes.ok) {
+                    this.platos = await platosRes.json();
+                    this.ventasPorEquipo = await ventasRes.json();
+                    console.log('✅ Datos cargados correctamente');
+                } else {
+                    throw new Error(`Platos: ${platosRes.status}, Ventas: ${ventasRes.status}`);
                 }
                 
-                this.platos = await platosRes.json();
-                this.ventasPorEquipo = await ventasRes.json();
-                
-                // Inicializar cantidades para nuevos platos
-                this.platos.forEach(plato => {
-                    if (this.venta.cantidades[plato.id] === undefined) {
-                        this.$set(this.venta.cantidades, plato.id, 0);
-                    }
-                });
-                
             } catch (error) {
-                console.error('Error cargando datos:', error);
-                // No mostrar alerta para evitar spam
+                console.error('❌ Error cargando datos:', error);
             }
+            
+            // Inicializar cantidades
+            this.platos.forEach(plato => {
+                if (this.venta.cantidades[plato.id] === undefined) {
+                    this.$set(this.venta.cantidades, plato.id, 0);
+                }
+            });
         },
         
         async registrarVenta() {
