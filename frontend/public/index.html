@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kermesse Scout</title>
+    <title>Kermesse Scout - Administración</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
@@ -11,28 +11,45 @@
     <div id="app">
         <!-- Admin View -->
         <div v-if="vista === 'admin'" class="admin">
-            <h1>🏕️ Administración Kermesse Scout</h1>
+            <div class="header-admin">
+                <h1>🏕️ Administración Kermesse Scout</h1>
+                <p>Sistema de control de ventas - Solo administradores</p>
+            </div>
             
             <div class="nav">
-                <button @click="vista = 'publica'">Ver Vista Pública</button>
+                <button @click="vista = 'publica'" class="btn-secondary">🌍 Ver Vista Pública</button>
+                <button @click="cargarDatos()" class="btn-secondary">🔄 Recargar Datos</button>
+                <a href="vista-publica.html" target="_blank" class="btn-link">📱 Abrir Vista Pública</a>
+            </div>
+
+            <div class="status-bar" :class="{ online: estadoConexion.includes('✅'), offline: estadoConexion.includes('❌') }">
+                <strong>🔗 Backend:</strong> {{ backendURL }} | 
+                <strong>📊 Estado:</strong> {{ estadoConexion }}
             </div>
 
             <div class="venta-form">
                 <h2>📝 Registrar Venta</h2>
                 <form @submit.prevent="registrarVenta">
-                    <select v-model="venta.equipo" required>
-                        <option value="">Selecciona equipo</option>
-                        <option value="lobatos-rovers">Lobatos/Rovers</option>
-                        <option value="exploradores">Exploradores</option>
-                        <option value="pioneros">Pioneros</option>
-                        <option value="comision">Comisión Ejecutiva</option>
-                    </select>
+                    <div class="form-group">
+                        <label for="equipo">Equipo:</label>
+                        <select v-model="venta.equipo" id="equipo" required>
+                            <option value="">Selecciona equipo</option>
+                            <option value="lobatos-rovers">Lobatos/Rovers</option>
+                            <option value="exploradores">Exploradores</option>
+                            <option value="pioneros">Pioneros</option>
+                            <option value="comision">Comisión Ejecutiva</option>
+                        </select>
+                    </div>
 
                     <div class="platos-input">
                         <div v-for="plato in platos" :key="plato.id" class="plato-input">
-                            <label>{{ plato.nombre }} ({{ plato.stock - plato.vendidos }} disp.)</label>
+                            <label for="plato-{{plato.id}}">
+                                <strong>{{ plato.nombre }}</strong><br>
+                                <small>{{ plato.stock - plato.vendidos }} disponibles • ${{ plato.precio_venta }}</small>
+                            </label>
                             <input 
                                 type="number" 
+                                :id="'plato-' + plato.id"
                                 v-model="venta.cantidades[plato.id]" 
                                 min="0" 
                                 :max="plato.stock - plato.vendidos"
@@ -41,7 +58,9 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-primary">✅ Registrar Venta</button>
+                    <button type="submit" class="btn-primary" :disabled="loading">
+                        {{ loading ? '⏳ Registrando...' : '✅ Registrar Venta' }}
+                    </button>
                 </form>
             </div>
 
@@ -50,10 +69,28 @@
                     <h2>📊 Ventas por Equipo</h2>
                     <div v-for="equipo in ventasPorEquipo" :key="equipo.nombre" class="equipo-card">
                         <h3>{{ equipo.nombre }}</h3>
-                        <p>💰 Total: ${{ equipo.total }}</p>
-                        <p>🎯 Vendidos: {{ equipo.vendidos }}/{{ equipo.meta }}</p>
+                        <div class="equipo-stats">
+                            <div class="stat">
+                                <span class="stat-label">💰 Total:</span>
+                                <span class="stat-value">${{ equipo.total }}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">🎯 Vendidos:</span>
+                                <span class="stat-value">{{ equipo.vendidos }}/{{ equipo.meta }}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">📈 Progreso:</span>
+                                <span class="stat-value">{{ Math.min(Math.round((equipo.vendidos / equipo.meta) * 100), 100) }}%</span>
+                            </div>
+                        </div>
                         <div class="progress">
                             <div class="progress-bar" :style="{ width: Math.min((equipo.vendidos / equipo.meta) * 100, 100) + '%' }"></div>
+                        </div>
+                        <div class="detalle-platos" v-if="equipo.platos && equipo.platos.length > 0">
+                            <strong>Desglose:</strong>
+                            <span v-for="plato in equipo.platos" :key="plato.nombre" class="plato-tag">
+                                {{ plato.nombre }}: {{ plato.cantidad }}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -62,36 +99,79 @@
                     <h2>🍽️ Estado de Platos</h2>
                     <div v-for="plato in platos" :key="plato.id" class="plato-card">
                         <h3>{{ plato.nombre }}</h3>
-                        <p>📦 Vendidos: {{ plato.vendidos }}/{{ plato.stock }}</p>
-                        <p>💵 Precio: ${{ plato.precio_venta }}</p>
-                        <p>💰 Ganancia: ${{ (plato.precio_venta - plato.precio_costo) * plato.vendidos }}</p>
+                        <div class="plato-stats">
+                            <div class="stat">
+                                <span class="stat-label">📦 Vendidos:</span>
+                                <span class="stat-value">{{ plato.vendidos }}/{{ plato.stock }}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">💵 Precio:</span>
+                                <span class="stat-value">${{ plato.precio_venta }}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">💰 Ganancia:</span>
+                                <span class="stat-value">${{ (plato.precio_venta - plato.precio_costo) * plato.vendidos }}</span>
+                            </div>
+                        </div>
                         <div class="progress">
                             <div class="progress-bar" :style="{ width: (plato.vendidos / plato.stock) * 100 + '%' }"></div>
                         </div>
+                        <div class="stock-info" :class="{ 
+                            'stock-bajo': (plato.stock - plato.vendidos) < 10,
+                            'stock-critico': (plato.stock - plato.vendidos) < 5
+                        }">
+                            {{ plato.stock - plato.vendidos }} unidades disponibles
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="totales-admin">
+                <h2>💰 Resumen Financiero</h2>
+                <div class="total-cards">
+                    <div class="total-card">
+                        <h3>Total Recaudado</h3>
+                        <p class="total-amount">${{ totalRecaudado }}</p>
+                    </div>
+                    <div class="total-card">
+                        <h3>Total Vendido</h3>
+                        <p class="total-amount">{{ totalVendido }} platos</p>
+                    </div>
+                    <div class="total-card">
+                        <h3>Ganancia Total</h3>
+                        <p class="total-amount">${{ totalGanancia }}</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Public View -->
+        <!-- Public View (dentro del mismo admin) -->
         <div v-else class="public-view">
-            <h1>🏕️ Kermesse Scout - Disponibilidad</h1>
+            <div class="header-public">
+                <h1>🏕️ Kermesse Scout - Vista Previa</h1>
+                <p>Así ven los demás la disponibilidad</p>
+            </div>
             
             <div class="nav">
-                <button @click="vista = 'admin'">Ir a Administración</button>
+                <button @click="vista = 'admin'" class="btn-primary">← Volver a Administración</button>
+                <a href="vista-publica.html" target="_blank" class="btn-link">📱 Abrir Vista Pública Real</a>
             </div>
 
             <div class="platos-grid">
-                <div v-for="plato in platos" :key="plato.id" class="plato-card" :class="{ agotado: plato.vendidos >= plato.stock }">
+                <div v-for="plato in platos" :key="plato.id" class="plato-card-public" :class="{ agotado: plato.vendidos >= plato.stock }">
                     <h3>{{ plato.nombre }}</h3>
                     <p class="precio">${{ plato.precio_venta }}</p>
-                    <p class="stock" :class="{ 'poco-stock': (plato.stock - plato.vendidos) < 10 }">
+                    <p class="stock" :class="{ 
+                        'poco-stock': (plato.stock - plato.vendidos) < 10,
+                        'muy-poco-stock': (plato.stock - plato.vendidos) < 5
+                    }">
                         {{ plato.stock - plato.vendidos }} disponibles
                     </p>
                     <div class="progress">
                         <div class="progress-bar" :style="{ width: (plato.vendidos / plato.stock) * 100 + '%' }"></div>
                     </div>
                     <div v-if="plato.vendidos >= plato.stock" class="agotado-label">AGOTADO</div>
+                    <div v-else-if="(plato.stock - plato.vendidos) < 5" class="poco-stock-label">¡ÚLTIMOS!</div>
                 </div>
             </div>
         </div>

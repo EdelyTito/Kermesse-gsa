@@ -20,6 +20,21 @@ createApp({
             estadoConexion: '🔄 Conectando...'
         }
     },
+    computed: {
+        totalRecaudado() {
+            return this.platos.reduce((total, plato) => {
+                return total + (plato.vendidos * plato.precio_venta);
+            }, 0);
+        },
+        totalVendido() {
+            return this.platos.reduce((total, plato) => total + plato.vendidos, 0);
+        },
+        totalGanancia() {
+            return this.platos.reduce((total, plato) => {
+                return total + ((plato.precio_venta - plato.precio_costo) * plato.vendidos);
+            }, 0);
+        }
+    },
     async mounted() {
         console.log('🔗 Conectando a:', this.backendURL);
         await this.cargarDatos();
@@ -52,7 +67,7 @@ createApp({
                 this.estadoConexion = '❌ Error de conexión';
             }
             
-            // ✅ CORREGIDO: Sin this.$set
+            // Inicializar cantidades
             this.platos.forEach(plato => {
                 if (this.venta.cantidades[plato.id] === undefined) {
                     this.venta.cantidades[plato.id] = 0;
