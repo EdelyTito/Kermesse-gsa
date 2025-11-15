@@ -64,7 +64,7 @@ createApp({
                     this.loading = false;
                 }
             }
-        }
+        },
 
         async cargarDatos() {
             try {
