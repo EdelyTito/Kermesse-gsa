@@ -177,18 +177,38 @@ app.get('/api/ventas/equipos', async (req, res) => {
   }
 });
 
-// Endpoint para resetear datos (solo desarrollo)
-if (process.env.NODE_ENV !== 'production') {
-  app.post('/api/reset', async (req, res) => {
-    try {
-      await pool.query('DELETE FROM ventas');
-      await pool.query('UPDATE platos SET vendidos = 0');
-      res.json({ message: 'Datos reseteados' });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-}
+// Endpoint para resetear datos (funciona en producción)
+app.post('/api/reset', async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    console.log('🔄 Reseteando base de datos...');
+    
+    // 1. Borrar todas las ventas
+    await client.query('DELETE FROM ventas');
+    
+    // 2. Resetear los contadores de platos a 0
+    await client.query('UPDATE platos SET vendidos = 0');
+    
+    await client.query('COMMIT');
+    
+    console.log('✅ Base de datos reseteada exitosamente');
+    
+    res.json({ 
+      success: true, 
+      message: '✅ Todos los datos han sido reseteados a cero' 
+    });
+    
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('❌ Error reseteando datos:', error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 
