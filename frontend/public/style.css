@@ -425,6 +425,22 @@ select:focus, input:focus {
     font-size: 1.1em;
 }
 
+.btn-danger {
+    background: #f44336;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-danger:hover {
+    background: #d32f2f;
+    transform: translateY(-2px);
+}
+
 /* ===== ANIMATIONS ===== */
 @keyframes pulse {
     0% { opacity: 1; }

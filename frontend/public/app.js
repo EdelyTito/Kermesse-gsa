@@ -41,6 +41,31 @@ createApp({
         setInterval(this.cargarDatos, 10000);
     },
     methods: {
+        async resetearDatos() {
+            if (confirm('⚠️ ¿ESTÁS ABSOLUTAMENTE SEGURO?\n\nEsto borrará TODAS las ventas y reseteará todos los contadores a CERO.\n\n✅ Pollo al Horno: 65 disponibles\n✅ Fricassé: 65 disponibles  \n✅ Chicharrón: 65 disponibles\n\nEsta acción NO se puede deshacer.')) {
+                this.loading = true;
+                try {
+                    const response = await fetch(`${this.backendURL}/api/reset`, {
+                        method: 'POST'
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        alert('✅ ' + result.message);
+                        await this.cargarDatos(); // Recargar los datos
+                    } else {
+                        alert('❌ Error: ' + result.error);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('❌ Error de conexión al servidor');
+                } finally {
+                    this.loading = false;
+                }
+            }
+        }
+
         async cargarDatos() {
             try {
                 console.log('📡 Cargando datos de:', this.backendURL);
