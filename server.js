@@ -6,7 +6,7 @@ const app = express();
 
 // Configurar CORS para producción
 app.use(cors({
-  origin: "*",
+  origin: "*",  // Permite todos los orígenes temporalmente
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
@@ -24,6 +24,7 @@ async function inicializarBaseDeDatos() {
   try {
     console.log('🔄 Inicializando base de datos...');
     
+    // Crear tabla de platos
     await pool.query(`
       CREATE TABLE IF NOT EXISTS platos (
         id SERIAL PRIMARY KEY,
@@ -35,6 +36,7 @@ async function inicializarBaseDeDatos() {
       );
     `);
 
+    // Crear tabla de ventas
     await pool.query(`
       CREATE TABLE IF NOT EXISTS ventas (
         id SERIAL PRIMARY KEY,
@@ -45,6 +47,7 @@ async function inicializarBaseDeDatos() {
       );
     `);
 
+    // Verificar si ya existen platos
     const platosExistentes = await pool.query('SELECT COUNT(*) FROM platos');
     
     if (parseInt(platosExistentes.rows[0].count) === 0) {
@@ -83,55 +86,6 @@ app.get('/api/platos', async (req, res) => {
   }
 });
 
-// Actualizar cantidad vendida de un plato (CRUD)
-app.put('/api/platos/:id', async (req, res) => {
-  const client = await pool.connect();
-  
-  try {
-    await client.query('BEGIN');
-    const { id } = req.params;
-    const { vendidos } = req.body;
-
-    console.log(`🔄 Actualizando plato ${id} a ${vendidos} vendidos`);
-
-    const plato = await client.query('SELECT * FROM platos WHERE id = $1', [id]);
-    if (plato.rows.length === 0) {
-      throw new Error('Plato no encontrado');
-    }
-
-    if (vendidos > plato.rows[0].stock) {
-      throw new Error(`La cantidad vendida no puede exceder el stock de ${plato.rows[0].stock}`);
-    }
-
-    if (vendidos < 0) {
-      throw new Error('La cantidad vendida no puede ser negativa');
-    }
-
-    await client.query(
-      'UPDATE platos SET vendidos = $1 WHERE id = $2',
-      [vendidos, id]
-    );
-
-    await client.query('DELETE FROM ventas WHERE plato_id = $1', [id]);
-
-    await client.query('COMMIT');
-    
-    console.log(`✅ Plato ${id} actualizado a ${vendidos} vendidos`);
-    
-    res.json({ 
-      success: true, 
-      message: `✅ ${plato.rows[0].nombre} actualizado a ${vendidos} vendidos` 
-    });
-    
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('❌ Error actualizando plato:', error);
-    res.status(400).json({ error: error.message });
-  } finally {
-    client.release();
-  }
-});
-
 // Registrar venta
 app.post('/api/ventas', async (req, res) => {
   const client = await pool.connect();
@@ -142,6 +96,7 @@ app.post('/api/ventas', async (req, res) => {
 
     for (const [platoId, cantidad] of Object.entries(cantidades)) {
       if (parseInt(cantidad) > 0) {
+        // Verificar stock
         const plato = await client.query(
           'SELECT stock, vendidos, nombre FROM platos WHERE id = $1 FOR UPDATE',
           [platoId]
@@ -156,11 +111,13 @@ app.post('/api/ventas', async (req, res) => {
           throw new Error(`No hay suficiente stock de ${plato.rows[0].nombre}`);
         }
 
+        // Actualizar plato
         await client.query(
           'UPDATE platos SET vendidos = $1 WHERE id = $2',
           [nuevoVendidos, platoId]
         );
 
+        // Registrar venta
         await client.query(
           'INSERT INTO ventas (equipo, plato_id, cantidad) VALUES ($1, $2, $3)',
           [equipo, platoId, cantidad]
@@ -220,7 +177,7 @@ app.get('/api/ventas/equipos', async (req, res) => {
   }
 });
 
-// Endpoint para resetear datos
+// Endpoint para resetear datos (funciona en producción)
 app.post('/api/reset', async (req, res) => {
   const client = await pool.connect();
   
@@ -229,7 +186,10 @@ app.post('/api/reset', async (req, res) => {
     
     console.log('🔄 Reseteando base de datos...');
     
+    // 1. Borrar todas las ventas
     await client.query('DELETE FROM ventas');
+    
+    // 2. Resetear los contadores de platos a 0
     await client.query('UPDATE platos SET vendidos = 0');
     
     await client.query('COMMIT');
