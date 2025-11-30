@@ -78,6 +78,88 @@
             border-left: 5px solid #f44336;
             background: #ffebee;
         }
+
+        /* Estilos para el CRUD */
+        .crud-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .crud-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .crud-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .crud-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #2196F3;
+        }
+
+        .crud-form {
+            display: flex;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .crud-input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .btn-small {
+            padding: 10px 15px;
+            font-size: 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .btn-edit {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #f57c00;
+        }
+
+        .btn-save {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #45a049;
+        }
+
+        .btn-cancel {
+            background: #9e9e9e;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #757575;
+        }
+
+        .edit-mode {
+            background: #fff3cd;
+            border-left-color: #ff9800;
+        }
     </style>
 </head>
 <body>
@@ -109,6 +191,54 @@
                 <button @click="cargarDatos()" class="btn-secondary">🔄 Recargar Datos</button>
                 <button @click="resetearDatos()" class="btn-danger">🗑️ Resetear Todo</button>
                 <a href="VistaPublica.html" target="_blank" class="btn-link">📱 Abrir Vista Pública</a>
+            </div>
+
+            <!-- NUEVA SECCIÓN: CRUD PARA MODIFICAR CANTIDADES -->
+            <div class="crud-section">
+                <h2>⚙️ Ajustar Cantidades Vendidas</h2>
+                <div class="crud-grid">
+                    <div v-for="plato in platos" :key="plato.id" class="crud-card" :class="{ 'edit-mode': plato.editando }">
+                        <h3>{{ plato.nombre }}</h3>
+                        <div class="plato-stats">
+                            <div class="stat">
+                                <span class="stat-label">Stock Total:</span>
+                                <span class="stat-value">{{ plato.stock }}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Actual Vendidos:</span>
+                                <span class="stat-value">{{ plato.vendidos }}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Disponibles:</span>
+                                <span class="stat-value">{{ plato.stock - plato.vendidos }}</span>
+                            </div>
+                        </div>
+                        
+                        <div v-if="!plato.editando" class="crud-form">
+                            <input 
+                                type="number" 
+                                v-model="plato.nuevoVendidos"
+                                min="0" 
+                                :max="plato.stock"
+                                placeholder="Nueva cantidad"
+                                class="crud-input"
+                            >
+                            <button @click="iniciarEdicion(plato)" class="btn-small btn-edit">✏️ Editar</button>
+                        </div>
+                        
+                        <div v-else class="crud-form">
+                            <input 
+                                type="number" 
+                                v-model="plato.nuevoVendidos"
+                                min="0" 
+                                :max="plato.stock"
+                                class="crud-input"
+                            >
+                            <button @click="guardarCambios(plato)" class="btn-small btn-save">💾 Guardar</button>
+                            <button @click="cancelarEdicion(plato)" class="btn-small btn-cancel">❌ Cancelar</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="venta-form">
@@ -266,26 +396,22 @@
             const password = document.getElementById('passwordInput').value;
             const errorMsg = document.getElementById('errorMsg');
             
-            // CONTRASEÑA: Cambia 'scout2024' por la que quieras usar
             if (password === 'Kermesse2025GSA') {
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('app').classList.remove('hidden');
             } else {
                 errorMsg.style.display = 'block';
-                // Limpiar el input
                 document.getElementById('passwordInput').value = '';
                 document.getElementById('passwordInput').focus();
             }
         }
         
-        // También funciona con Enter
         document.getElementById('passwordInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 checkPassword();
             }
         });
 
-        // Enfocar el input al cargar la página
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('passwordInput').focus();
         });
